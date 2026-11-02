@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'db.dart';
+import 'native.dart';
 import 'screens/expenses_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/more_screen.dart';
 import 'screens/notes_screen.dart';
 import 'screens/tasks_screen.dart';
+import 'theme_state.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  themeNotifier.value = themeFromName(await AppDb.getSetting('theme_mode'));
+  AppDb.onChange = Native.requestSync; // refresh reminders + widget after any change
   runApp(const StudyBuddyApp());
 }
 
@@ -19,13 +24,16 @@ class StudyBuddyApp extends StatelessWidget {
   const StudyBuddyApp({super.key});
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-        title: 'StudyBuddy',
-        debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.system, // dark mode follows the phone setting
-        theme: _theme(Brightness.light),
-        darkTheme: _theme(Brightness.dark),
-        home: const Shell(),
+  Widget build(BuildContext context) => ValueListenableBuilder<ThemeMode>(
+        valueListenable: themeNotifier,
+        builder: (context, mode, _) => MaterialApp(
+          title: 'StudyBuddy',
+          debugShowCheckedModeBanner: false,
+          themeMode: mode,
+          theme: _theme(Brightness.light),
+          darkTheme: _theme(Brightness.dark),
+          home: const Shell(),
+        ),
       );
 }
 
@@ -39,6 +47,15 @@ class Shell extends StatefulWidget {
 class _ShellState extends State<Shell> {
   int _i = 0;
   static const _pages = [HomeScreen(), ExpensesScreen(), NotesScreen(), TasksScreen(), MoreScreen()];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Native.requestNotifPermission();
+      Native.requestSync();
+    });
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(

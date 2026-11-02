@@ -37,13 +37,26 @@ class AppDb {
 
   static Future<List<Map<String, Object?>>> all(String table) async => (await _d).query(table);
 
-  static Future<int> insert(String table, Map<String, Object?> m) async => (await _d).insert(table, m);
+  /// Called after every insert/update/delete (used to refresh reminders and the widget).
+  static void Function()? onChange;
 
-  static Future<int> update(String table, Map<String, Object?> m, int id) async =>
-      (await _d).update(table, m, where: 'id = ?', whereArgs: [id]);
+  static Future<int> insert(String table, Map<String, Object?> m) async {
+    final r = await (await _d).insert(table, m);
+    onChange?.call();
+    return r;
+  }
 
-  static Future<int> delete(String table, int id) async =>
-      (await _d).delete(table, where: 'id = ?', whereArgs: [id]);
+  static Future<int> update(String table, Map<String, Object?> m, int id) async {
+    final r = await (await _d).update(table, m, where: 'id = ?', whereArgs: [id]);
+    onChange?.call();
+    return r;
+  }
+
+  static Future<int> delete(String table, int id) async {
+    final r = await (await _d).delete(table, where: 'id = ?', whereArgs: [id]);
+    onChange?.call();
+    return r;
+  }
 
   // ---- settings (key/value) ----
   static Future<String?> getSetting(String k) async {

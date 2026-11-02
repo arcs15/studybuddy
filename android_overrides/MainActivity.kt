@@ -8,31 +8,69 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-/** Reads the SMS inbox for the "Import from SMS" feature. Nothing leaves the phone. */
+/** Native bridge: SMS inbox, reminders (notifications) and the home screen widget. Nothing leaves the phone. */
 class MainActivity : FlutterActivity() {
-    private val channelName = "arcx/sms"
     private var pending: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
-            .setMethodCallHandler { call, result ->
-                if (call.method == "readSms") {
-                    if (hasPermission()) {
-                        result.success(readSms())
-                    } else if (Build.VERSION.SDK_INT >= 23) {
-                        pending = result
-                        requestPermissions(arrayOf(Manifest.permission.READ_SMS), 77)
-                    } else {
-                        result.success(readSms())
-                    }
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+
+        MethodChannel(messenger, "arcx/sms").setMethodCallHandler { call, result ->
+            if (call.method == "readSms") {
+                if (hasSmsPermission()) {
+                    result.success(readSms())
+                } else if (Build.VERSION.SDK_INT >= 23) {
+                    pending = result
+                    requestPermissions(arrayOf(Manifest.permission.READ_SMS), 77)
                 } else {
-                    result.notImplemented()
+                    result.success(readSms())
                 }
+            } else {
+                result.notImplemented()
             }
+        }
+
+        MethodChannel(messenger, "arcx/native").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "requestNotifPermission" -> {
+                    if (Build.VERSION.SDK_INT >= 33 &&
+                        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 78)
+                    }
+                    result.success(true)
+                }
+                "scheduleReminders" -> {
+                    val items = call.arguments as? List<*> ?: emptyList<Any>()
+                    Reminders.replaceAll(applicationContext, items)
+                    result.success(true)
+                }
+                "testReminder" -> {
+                    Reminders.scheduleOne(
+                        applicationContext, 999999, System.currentTimeMillis() + 10000,
+                        "StudyBuddy test", "Reminders are working! ✅"
+                    )
+                    result.success(true)
+                }
+                "updateWidget" -> {
+                    val m = call.arguments as? Map<*, *>
+                    if (m != null) {
+                        StudyWidget.save(
+                            applicationContext,
+                            (m["title"] as? String) ?: "StudyBuddy",
+                            (m["big"] as? String) ?: "",
+                            (m["line"] as? String) ?: ""
+                        )
+                    }
+                    result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
     }
 
-    private fun hasPermission(): Boolean {
+    private fun hasSmsPermission(): Boolean {
         if (Build.VERSION.SDK_INT < 23) return true
         return checkSelfPermission(Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
     }

@@ -72,6 +72,14 @@ class _SmsImportScreenState extends State<SmsImportScreen> {
           decoration: const InputDecoration(hintText: 'Paste the bKash / Nagad / bank message', border: OutlineInputBorder()),
         ),
         actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.content_paste_go),
+            label: const Text('Paste from clipboard'),
+            onPressed: () async {
+              final d = await Clipboard.getData(Clipboard.kTextPlain);
+              if (d?.text != null) c.text = d!.text!;
+            },
+          ),
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(onPressed: () => Navigator.pop(ctx, c.text), child: const Text('Read')),
         ],

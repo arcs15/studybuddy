@@ -19,7 +19,8 @@ class ParsedSms {
 }
 
 const _senders = ['bkash', 'nagad', 'rocket', 'upay', 'mcash', 'tap', 'bank', '16216', '16167', '16269'];
-final _amountRe = RegExp(r'(?:tk|bdt|৳)\.?\s*:?\s*([\d,]+(?:\.\d+)?)', caseSensitive: false);
+final _amountRe = RegExp(r'(?:tk|bdt|taka|৳)\.?\s*:?\s*([\d,]+(?:\.\d+)?)', caseSensitive: false);
+final _amountRe2 = RegExp(r'([\d,]+(?:\.\d+)?)\s*(?:tk|bdt|taka|৳)', caseSensitive: false);
 
 /// Returns null if the message does not look like a mobile banking transaction.
 /// [force] is used for pasted text (skips the sender check).
@@ -33,7 +34,7 @@ ParsedSms? parseSms(int id, String sender, String body, DateTime date, {bool for
       b.contains('balance');
   if (!force && !known) return null;
 
-  final m = _amountRe.firstMatch(body);
+  final m = _amountRe.firstMatch(body) ?? _amountRe2.firstMatch(body);
   if (m == null) return null;
   final amount = double.tryParse(m.group(1)!.replaceAll(',', ''));
   if (amount == null || amount <= 0) return null;
@@ -59,6 +60,9 @@ ParsedSms? parseSms(int id, String sender, String body, DateTime date, {bool for
       b.contains('transfer')) {
     kind = SmsKind.payment;
   }
-  if (kind == null) return null;
+  if (kind == null) {
+    if (!force) return null;
+    kind = SmsKind.payment; // pasted text: default to payment, you choose where to add it
+  }
   return ParsedSms(id, sender, body, date, amount, kind);
 }
