@@ -101,6 +101,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         'Books' => Icons.menu_book,
         'Fees' => Icons.school,
         'Rent' => Icons.home,
+        'Bills' => Icons.receipt_long,
+        'Health' => Icons.local_hospital,
+        'Lend' => Icons.handshake,
         'Fun' => Icons.sports_esports,
         _ => Icons.category,
       };

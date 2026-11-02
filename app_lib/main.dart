@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/expenses_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/more_screen.dart';
 import 'screens/notes_screen.dart';
 import 'screens/tasks_screen.dart';
 
@@ -37,7 +38,7 @@ class Shell extends StatefulWidget {
 
 class _ShellState extends State<Shell> {
   int _i = 0;
-  static const _pages = [HomeScreen(), ExpensesScreen(), NotesScreen(), TasksScreen()];
+  static const _pages = [HomeScreen(), ExpensesScreen(), NotesScreen(), TasksScreen(), MoreScreen()];
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -50,6 +51,7 @@ class _ShellState extends State<Shell> {
             NavigationDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: 'Expenses'),
             NavigationDestination(icon: Icon(Icons.sticky_note_2_outlined), selectedIcon: Icon(Icons.sticky_note_2), label: 'Notes'),
             NavigationDestination(icon: Icon(Icons.checklist_outlined), selectedIcon: Icon(Icons.checklist), label: 'Tasks'),
+            NavigationDestination(icon: Icon(Icons.apps_outlined), selectedIcon: Icon(Icons.apps), label: 'More'),
           ],
         ),
       );
